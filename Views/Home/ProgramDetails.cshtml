@@ -1,0 +1,157 @@
+@model EventFinder.Models.EventProgram
+@{
+    ViewData["Title"] = Model.ProgramName + " - Rules & Registration";
+    int registeredPercent = (int)Math.Min(100, Math.Round((double)Model.RegisteredCount / Model.MaxParticipants * 100));
+}
+
+<div class="mb-4">
+    <a asp-action="Index" class="btn btn-light rounded-pill px-3 py-2 fw-semibold text-secondary shadow-sm">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+
+<div class="row g-4">
+    <!-- Left Column: Program Rules & Details -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card-header gradient-indigo p-4">
+                <span class="badge bg-white text-dark rounded-pill px-3 py-1 fw-bold mb-2">@Model.Event?.Category Event</span>
+                <h2 class="fw-bold text-white mb-1">@Model.ProgramName</h2>
+                <div class="text-white opacity-90"><i class="bi bi-building me-1"></i>Part of <strong>@Model.Event?.Name</strong></div>
+            </div>
+
+            <div class="card-body p-4">
+                <!-- Registration Countdown Timer -->
+                <div class="p-3 bg-light rounded-4 border mb-4 d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="small text-muted fw-bold text-uppercase">Registration Deadline</div>
+                        <div class="fw-semibold text-dark"><i class="bi bi-calendar-event text-danger me-1"></i>@Model.Deadline.ToString("dd MMM yyyy 'at' hh:mm tt")</div>
+                    </div>
+                    <div class="countdown-timer" data-deadline="@Model.Deadline.ToString("yyyy-MM-ddTHH:mm:ss")">
+                        <!-- JS fills countdown here -->
+                    </div>
+                </div>
+
+                <!-- Event Details & Seat Limit Bar -->
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="small text-muted fw-bold"><i class="bi bi-calendar2-check text-primary me-1"></i>EVENT DATE</div>
+                            <div class="fw-bold fs-5 text-dark mt-1">@Model.EventDate.ToString("dd MMM yyyy, hh:mm tt")</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="p-3 bg-light rounded-3 border">
+                            <div class="small text-muted fw-bold"><i class="bi bi-people-fill text-indigo me-1"></i>TEAM FORMAT</div>
+                            <div class="fw-bold fs-5 text-dark mt-1">@(Model.TeamSize == 1 ? "Individual Event" : $"Team Event ({Model.TeamSize} members)")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="fw-bold text-dark"><i class="bi bi-person-check-fill text-success me-1"></i>Participant Capacity</span>
+                        <span class="small fw-bold text-primary">@Model.RegisteredCount / @Model.MaxParticipants Registered</span>
+                    </div>
+                    <div class="progress rounded-pill" style="height: 12px;">
+                        <div class="progress-bar bg-gradient @(registeredPercent >= 90 ? "bg-danger" : "bg-primary")" role="progressbar" style="width: @registeredPercent%;" aria-valuenow="@registeredPercent" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="small text-muted mt-1">@Model.AvailableSeats spots available before capacity limit is reached.</div>
+                </div>
+
+                <h5 class="fw-bold text-dark mb-2"><i class="bi bi-info-circle-fill text-primary me-2"></i>About Program</h5>
+                <p class="text-secondary leading-relaxed mb-4">@Model.Description</p>
+
+                <h5 class="fw-bold text-dark mb-3"><i class="bi bi-file-earmark-text-fill text-indigo me-2"></i>Rules & Competition Guidelines</h5>
+                <div class="rules-box mb-4">
+                    @Model.Rules
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Registration Form -->
+    <div class="col-lg-5">
+        <div class="form-card sticky-top" style="top: 90px;">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="stat-icon-wrapper gradient-primary text-white">
+                    <i class="bi bi-pencil-square"></i>
+                </div>
+                <div>
+                    <h4 class="fw-bold mb-0">Register Now</h4>
+                    <div class="small text-muted">Fill student details to participate</div>
+                </div>
+            </div>
+
+            @if (!Model.IsRegistrationOpen)
+            {
+                <div class="alert alert-warning rounded-4 border-0 p-3 text-center my-3">
+                    <i class="bi bi-lock-fill fs-3 text-warning mb-2 d-block"></i>
+                    <h6 class="fw-bold">Registration Closed</h6>
+                    <p class="small mb-0 text-muted">Registration for this program is either filled or past the deadline.</p>
+                </div>
+            }
+            else
+            {
+                <form asp-action="Register" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="EventProgramId" value="@Model.Id" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Full Name <span class="text-danger">*</span></label>
+                        <input type="text" name="StudentName" class="form-control" placeholder="e.g. John Doe" required />
+                    </div>
+
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Dept / Reg No <span class="text-danger">*</span></label>
+                            <input type="text" name="DeptNo" class="form-control" placeholder="e.g. 21CS045" required />
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-semibold">Department <span class="text-danger">*</span></label>
+                            <select name="Department" class="form-select" required>
+                                <option value="">Select Dept</option>
+                                <option value="CSE">CSE</option>
+                                <option value="IT">IT</option>
+                                <option value="ECE">ECE</option>
+                                <option value="EEE">EEE</option>
+                                <option value="MECH">MECH</option>
+                                <option value="CIVIL">CIVIL</option>
+                                <option value="MBA">MBA</option>
+                                <option value="MCA">MCA</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mobile Number <span class="text-danger">*</span></label>
+                        <input type="tel" name="MobileNumber" class="form-control" placeholder="e.g. 9876543210" pattern="[0-9]{10}" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Email Address <span class="text-danger">*</span></label>
+                        <input type="email" name="Email" class="form-control" placeholder="student@college.edu" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Skills / Domain Expertise</label>
+                        <input type="text" name="Skills" class="form-control" placeholder="e.g. C#, Python, UI Design, Public Speaking" />
+                        <div class="form-text small">Used for skill matching with potential teammates.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Looking for Teammates?</label>
+                        <select name="LookingForTeam" class="form-select">
+                            <option value="Yes">Yes, list me on Skill Matcher Board</option>
+                            <option value="No">No, I already have a team / individual</option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-gradient-success w-100 py-3 fw-bold fs-6 shadow">
+                        <i class="bi bi-send-check-fill me-2"></i> Submit Registration
+                    </button>
+                </form>
+            }
+        </div>
+    </div>
+</div>

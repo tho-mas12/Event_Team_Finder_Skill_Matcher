@@ -1,0 +1,171 @@
+@model EventFinder.Models.AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Admin Overview Dashboard";
+}
+
+<!-- Admin Header Navigation Bar -->
+<div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+        <h2 class="fw-bold mb-1 text-dark"><i class="bi bi-speedometer2 text-primary me-2"></i>Admin Dashboard</h2>
+        <p class="text-muted mb-0">Overview of campus events, registrations, capacity tracking, and programs.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <a asp-action="NewEvent" class="btn btn-gradient-primary shadow">
+            <i class="bi bi-plus-circle-fill me-1"></i> Add New Event
+        </a>
+        <a asp-action="Registrations" class="btn btn-light border fw-semibold">
+            <i class="bi bi-people-fill me-1"></i> Registered Event List
+        </a>
+    </div>
+</div>
+
+<!-- Key Metric Stat Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon-wrapper gradient-indigo text-white">
+                <i class="bi bi-calendar-event-fill"></i>
+            </div>
+            <div>
+                <div class="stat-number">@Model.TotalEvents</div>
+                <div class="stat-label">TOTAL EVENTS</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon-wrapper gradient-purple text-white">
+                <i class="bi bi-list-task"></i>
+            </div>
+            <div>
+                <div class="stat-number">@Model.TotalPrograms</div>
+                <div class="stat-label">EVENT PROGRAMS</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon-wrapper gradient-emerald text-white">
+                <i class="bi bi-person-check-fill"></i>
+            </div>
+            <div>
+                <div class="stat-number">@Model.TotalRegistrations</div>
+                <div class="stat-label">TOTAL REGISTRATIONS</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-3">
+        <div class="stat-card">
+            <div class="stat-icon-wrapper gradient-pink text-white">
+                <i class="bi bi-ticket-perforated-fill"></i>
+            </div>
+            <div>
+                <div class="stat-number">@Model.TotalSeatsAvailable</div>
+                <div class="stat-label">SPOTS REMAINING</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <!-- Program Capacity Breakdown -->
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <div class="d-flex align-items-center justify-content-between mb-4">
+                <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Program Registration Overview</h5>
+                <a asp-action="Registrations" class="small fw-bold text-primary">View All Roster <i class="bi bi-arrow-right"></i></a>
+            </div>
+
+            <div class="d-flex flex-column gap-3">
+                @foreach (var prog in Model.ProgramStats)
+                {
+                    int pct = (int)Math.Min(100, Math.Round((double)prog.RegisteredCount / prog.MaxParticipants * 100));
+                    <div class="p-3 bg-light rounded-4 border">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div>
+                                <span class="fw-bold text-dark fs-6">@prog.ProgramName</span>
+                                <span class="badge bg-secondary-subtle text-secondary ms-2 small">@prog.Event?.Name</span>
+                            </div>
+                            <span class="fw-bold small @(pct >= 100 ? "text-danger" : "text-success")">
+                                @prog.RegisteredCount / @prog.MaxParticipants Participants (@pct%)
+                            </span>
+                        </div>
+                        <div class="progress rounded-pill" style="height: 10px;">
+                            <div class="progress-bar @(pct >= 90 ? "bg-danger" : "bg-primary")" role="progressbar" style="width: @pct%;"></div>
+                        </div>
+                        <div class="d-flex justify-content-between small text-muted mt-2">
+                            <span><i class="bi bi-calendar-event me-1"></i>Date: @prog.EventDate.ToString("MMM dd, yyyy")</span>
+                            <span><i class="bi bi-clock-history me-1"></i>Deadline: @prog.Deadline.ToString("MMM dd, hh:mm tt")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Participation Breakdown -->
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm rounded-4 h-100 p-4">
+            <h5 class="fw-bold mb-4 text-dark"><i class="bi bi-diagram-3-fill text-indigo me-2"></i>Registrations by Department</h5>
+
+            @if (Model.RegistrationsByDepartment.Any())
+            {
+                <div class="d-flex flex-column gap-3">
+                    @foreach (var kvp in Model.RegistrationsByDepartment)
+                    {
+                        int deptPct = Model.TotalRegistrations > 0 ? (int)Math.Round((double)kvp.Value / Model.TotalRegistrations * 100) : 0;
+                        <div>
+                            <div class="d-flex justify-content-between mb-1">
+                                <span class="fw-semibold text-dark">@kvp.Key Department</span>
+                                <span class="fw-bold text-primary">@kvp.Value (<small>@deptPct%</small>)</span>
+                            </div>
+                            <div class="progress rounded-pill" style="height: 8px;">
+                                <div class="progress-bar bg-indigo" role="progressbar" style="width: @deptPct%;"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-muted text-center py-4">No department data yet.</div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Recent Registrations Roster Table -->
+<div class="card border-0 shadow-sm rounded-4 p-4">
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history me-2 text-success"></i>Recent Student Registrations</h5>
+        <a asp-action="Registrations" class="btn btn-sm btn-outline-primary rounded-pill">Manage All Registrations</a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table custom-table align-middle">
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Dept No</th>
+                    <th>Department</th>
+                    <th>Event Program</th>
+                    <th>Contact</th>
+                    <th>Registered At</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var reg in Model.RecentRegistrations)
+                {
+                    <tr>
+                        <td class="fw-bold text-dark">@reg.StudentName</td>
+                        <td><span class="badge bg-light text-dark border">@reg.DeptNo</span></td>
+                        <td><span class="badge bg-info-subtle text-info-emphasis fw-bold">@reg.Department</span></td>
+                        <td><strong class="text-primary">@reg.EventProgram?.ProgramName</strong></td>
+                        <td class="small text-muted">@reg.MobileNumber &bull; @reg.Email</td>
+                        <td class="small text-muted">@reg.RegisteredAt.ToString("MMM dd, hh:mm tt")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

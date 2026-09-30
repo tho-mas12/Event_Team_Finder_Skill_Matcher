@@ -1,0 +1,120 @@
+@model EventFinder.Models.TeamFinderViewModel
+@{
+    ViewData["Title"] = "Skill Matcher & Team Finder";
+}
+
+<div class="gradient-banner mb-4">
+    <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon-wrapper bg-white text-dark rounded-circle p-3 fs-2 shadow">
+            <i class="bi bi-people-fill text-primary"></i>
+        </div>
+        <div>
+            <h2 class="gradient-banner-title mb-1">Skill Matcher & Team Finder</h2>
+            <p class="mb-0 opacity-90">Find teammates with complementary skills for multi-person hackathons and event programs!</p>
+        </div>
+    </div>
+</div>
+
+<!-- Filters Section -->
+<div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+    <form method="get" asp-action="TeamFinder" class="row g-3 align-items-center">
+        <div class="col-md-5">
+            <label class="form-label fw-semibold small text-muted">Filter by Event Program</label>
+            <select name="programId" class="form-select">
+                <option value="">All Team Programs</option>
+                @foreach (var prog in Model.AvailablePrograms)
+                {
+                    <option value="@prog.Id" selected="@(Model.SelectedProgramId == prog.Id)">@prog.ProgramName (@prog.Event?.Name)</option>
+                }
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label fw-semibold small text-muted">Search Student or Skill</label>
+            <input type="text" name="search" value="@Model.SearchTerm" class="form-control" placeholder="Search by name, skill, or dept..." />
+        </div>
+        <div class="col-md-3 d-flex gap-2 align-self-end">
+            <button type="submit" class="btn btn-gradient-primary w-100"><i class="bi bi-funnel-fill me-1"></i> Filter</button>
+            <a asp-action="TeamFinder" class="btn btn-light border"><i class="bi bi-arrow-counterclockwise"></i></a>
+        </div>
+    </form>
+
+    @if (Model.PopularSkills.Any())
+    {
+        <div class="mt-3 pt-3 border-top">
+            <span class="small text-muted fw-bold me-2">POPULAR SKILLS:</span>
+            @foreach (var sk in Model.PopularSkills)
+            {
+                <a asp-action="TeamFinder" asp-route-skill="@sk" asp-route-programId="@Model.SelectedProgramId"
+                   class="badge @(Model.SelectedSkill.Equals(sk, StringComparison.OrdinalIgnoreCase) ? "bg-primary text-white" : "bg-light text-dark border") rounded-pill px-3 py-2 me-1 text-decoration-none">
+                    <i class="bi bi-lightning-charge-fill me-1 text-warning"></i>@sk
+                </a>
+            }
+        </div>
+    }
+</div>
+
+<!-- Participant Candidates Grid -->
+@if (!Model.ParticipantsLookingForTeam.Any())
+{
+    <div class="text-center py-5 bg-white rounded-4 border p-4 shadow-sm">
+        <i class="bi bi-person-exclamation display-3 text-muted"></i>
+        <h4 class="fw-bold mt-3 text-secondary">No Teammate Requests Found</h4>
+        <p class="text-muted">No students are currently seeking teammates for this filter. Register for an event program to be listed here!</p>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var student in Model.ParticipantsLookingForTeam)
+        {
+            <div class="col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 p-4 transition-hover">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="bg-primary-subtle text-primary rounded-circle p-3 fw-bold fs-4 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                @student.StudentName.Substring(0, 1).ToUpper()
+                            </div>
+                            <div>
+                                <h5 class="fw-bold mb-0 text-dark">@student.StudentName</h5>
+                                <div class="small text-muted">@student.DeptNo &bull; <strong>@student.Department</strong></div>
+                            </div>
+                        </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-1 fw-bold">
+                            Looking for Team
+                        </span>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 mb-3 border">
+                        <div class="small text-muted fw-bold mb-1"><i class="bi bi-award-fill text-warning me-1"></i>REGISTERED EVENT</div>
+                        <div class="fw-semibold text-primary">@student.EventProgram?.ProgramName</div>
+                        <div class="small text-muted opacity-75">@student.EventProgram?.Event?.Name</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="small text-muted fw-bold mb-2"><i class="bi bi-tools text-indigo me-1"></i>SKILLS & EXPERTISE</div>
+                        @if (!string.IsNullOrEmpty(student.Skills))
+                        {
+                            foreach (var s in student.Skills.Split(new[] { ',', ';' }, StringSplitOptions.RemoveEmptyEntries))
+                            {
+                                <span class="skill-tag">@s.Trim()</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="text-muted small italic">General Participant</span>
+                        }
+                    </div>
+
+                    <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between">
+                        <a href="tel:@student.MobileNumber" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <i class="bi bi-telephone-fill me-1"></i> Call
+                        </a>
+                        <a href="mailto:@student.Email" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                            <i class="bi bi-envelope-fill me-1"></i> Email
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

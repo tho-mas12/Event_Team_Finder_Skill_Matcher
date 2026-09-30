@@ -1,0 +1,17 @@
+## Ignore Visual Studio / .NET build artifacts
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+*.user
+*.userosscache
+*.sln.docstates
+*.suo
+
+## Ignore SQLite DB runtime logs if needed or lock files
+*.sqlite-wal
+*.sqlite-shm
+
+## OS files
+.DS_Store
+Thumbs.db

@@ -1,0 +1,132 @@
+@model IEnumerable<EventFinder.Models.Event>
+@{
+    ViewData["Title"] = "Campus Event Dashboard";
+    string currentCat = ViewBag.CurrentCategory ?? "All";
+    string searchTerm = ViewBag.SearchTerm ?? "";
+}
+
+<!-- Hero Banner -->
+<div class="gradient-banner mb-5">
+    <div class="row align-items-center">
+        <div class="col-lg-8">
+            <span class="badge bg-warning text-dark px-3 py-2 rounded-pill fw-bold mb-3 shadow-sm">
+                <i class="bi bi-stars me-1"></i> Campus Event Portal 2026
+            </span>
+            <h1 class="gradient-banner-title mb-3">Explore Events, Match Skills & Join Programs</h1>
+            <p class="fs-5 opacity-90 mb-4 fw-normal">
+                Browse upcoming college events, review program rules, check max participant limits, register instantly, and match skills with teammates!
+            </p>
+            <div class="d-flex flex-wrap gap-3">
+                <a href="#events-section" class="btn btn-warning btn-lg rounded-pill fw-bold px-4 shadow">
+                    <i class="bi bi-compass-fill me-2"></i> Browse Events
+                </a>
+                <a asp-action="TeamFinder" class="btn btn-outline-light btn-lg rounded-pill fw-semibold px-4">
+                    <i class="bi bi-person-workspace me-2"></i> Skill Matcher Board
+                </a>
+            </div>
+        </div>
+        <div class="col-lg-4 text-center d-none d-lg-block">
+            <i class="bi bi-rocket-takeoff-fill display-1 text-warning opacity-75"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Search & Category Filters -->
+<div id="events-section" class="row align-items-center g-3 mb-4">
+    <div class="col-md-7">
+        <div class="d-flex flex-wrap gap-2">
+            @{
+                var categories = new[] { "All", "Technical", "Hackathon", "Cultural", "Workshop" };
+            }
+            @foreach (var cat in categories)
+            {
+                <a asp-action="Index" asp-route-category="@(cat == "All" ? "" : cat)" asp-route-search="@searchTerm"
+                   class="btn @(currentCat.Equals(cat, StringComparison.OrdinalIgnoreCase) || (cat == "All" && string.IsNullOrEmpty(currentCat)) ? "btn-primary shadow-sm" : "btn-light border") rounded-pill px-3 py-2 fw-semibold">
+                    @cat
+                </a>
+            }
+        </div>
+    </div>
+    <div class="col-md-5">
+        <form method="get" asp-action="Index" class="d-flex gap-2">
+            <input type="hidden" name="category" value="@(currentCat == "All" ? "" : currentCat)" />
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 rounded-start-pill ps-3"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" name="search" value="@searchTerm" class="form-control border-start-0 rounded-end-pill py-2" placeholder="Search events..." />
+            </div>
+            <button type="submit" class="btn btn-gradient-primary rounded-pill px-4">Search</button>
+        </form>
+    </div>
+</div>
+
+<!-- Event List Grid -->
+@if (!Model.Any())
+{
+    <div class="text-center py-5 bg-white rounded-4 border p-4 shadow-sm my-4">
+        <i class="bi bi-calendar-x display-3 text-muted"></i>
+        <h4 class="fw-bold mt-3 text-secondary">No Events Found</h4>
+        <p class="text-muted">No events match your selected filters. Try searching for something else!</p>
+        <a asp-action="Index" class="btn btn-outline-primary rounded-pill mt-2">Reset Filters</a>
+    </div>
+}
+else
+{
+    <div class="row g-4">
+        @foreach (var item in Model)
+        {
+            <div class="col-lg-6">
+                <div class="event-card">
+                    <div class="event-card-header @item.BannerGradient d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="category-chip"><i class="bi bi-tag-fill me-1"></i>@item.Category</span>
+                            <h3 class="fw-bold text-white mb-1 mt-2">@item.Name</h3>
+                            <div class="small opacity-90 text-white"><i class="bi bi-geo-alt-fill me-1"></i>@item.Location</div>
+                        </div>
+                        <span class="badge bg-white text-dark rounded-circle p-3 shadow-sm fs-5 fw-bold">
+                            @item.Programs.Count <span class="d-block fs-6 text-muted fw-normal">Programs</span>
+                        </span>
+                    </div>
+
+                    <div class="event-card-body">
+                        <p class="text-muted mb-4 fs-6">@item.Description</p>
+
+                        <h6 class="fw-bold text-dark text-uppercase small tracking-wide mb-3"><i class="bi bi-list-stars text-primary me-2"></i>Event Programs:</h6>
+                        
+                        <div class="d-flex flex-column gap-3 mb-4">
+                            @foreach (var prog in item.Programs)
+                            {
+                                <div class="p-3 bg-light rounded-4 border d-flex flex-column flex-sm-row align-items-sm-center justify-content-between gap-3">
+                                    <div>
+                                        <div class="fw-bold text-dark fs-6">@prog.ProgramName</div>
+                                        <div class="small text-muted d-flex align-items-center gap-3 mt-1">
+                                            <span><i class="bi bi-people-fill text-indigo me-1"></i>Max: <strong>@prog.MaxParticipants</strong></span>
+                                            <span><i class="bi bi-calendar-check text-success me-1"></i>Date: @prog.EventDate.ToString("MMM dd, yyyy")</span>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        @if (prog.AvailableSeats > 0 && DateTime.Now <= prog.Deadline)
+                                        {
+                                            <span class="badge badge-open rounded-pill px-3 py-2"><i class="bi bi-door-open-fill me-1"></i>@prog.AvailableSeats seats left</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-full rounded-pill px-3 py-2"><i class="bi bi-x-circle-fill me-1"></i>Closed</span>
+                                        }
+                                        <a asp-action="ProgramDetails" asp-route-id="@prog.Id" class="btn btn-sm btn-outline-primary rounded-pill px-3 fw-semibold">
+                                            Rules & Register <i class="bi bi-arrow-right ms-1"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="mt-auto pt-3 border-top d-flex align-items-center justify-content-between text-muted small">
+                            <span><i class="bi bi-clock-history me-1"></i>Added @item.CreatedAt.ToString("MMM dd, yyyy")</span>
+                            <span class="fw-semibold text-primary"><i class="bi bi-shield-check me-1"></i>Verified Event</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
